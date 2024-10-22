@@ -1,0 +1,137 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_DB: DemoCasino
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  bets-api:
+    build:
+      context: .
+      dockerfile: ./src/DemoCasino.Services.Bets.Api/Dockerfile
+    container_name: bets-api
+    ports:
+      - "8081:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=bets;Username=postgres;Password=mysecretpassword
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__UserName=user
+      - RabbitMQ__Password=password
+      - Redis__Host=redis
+      - Redis__Port=6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  customers-api:
+    build:
+      context: .
+      dockerfile: ./src/DemoCasino.Services.Customers.Api/Dockerfile
+    container_name: customers-api
+    ports:
+      - "8082:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=customers;Username=postgres;Password=mysecretpassword
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__UserName=user
+      - RabbitMQ__Password=password
+      - Redis__Host=redis
+      - Redis__Port=6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  funds-api:
+    build:
+      context: .
+      dockerfile: ./src/DemoCasino.Services.Funds.Api/Dockerfile
+    container_name: funds-api
+    ports:
+      - "8083:8080"
+    environment:
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=funds;Username=postgres;Password=mysecretpassword
+      - RabbitMQ__HostName=rabbitmq
+      - RabbitMQ__Port=5672
+      - RabbitMQ__UserName=user
+      - RabbitMQ__Password=password
+      - Redis__Host=redis
+      - Redis__Port=6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./src/DemoCasino.ApiGateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - bets-api
+      - customers-api
+      - funds-api
+
+  rabbitmq:
+    image: rabbitmq:management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+      RABBITMQ_CONFIG_FILE: /etc/rabbitmq/rabbitmq.conf
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+      - ./rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  postgres_data:
+  rabbitmq_data:

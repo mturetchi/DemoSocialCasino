@@ -1,0 +1,43 @@
+{
+	"Routes": [
+		{
+			"DownstreamPathTemplate": "/bets/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "bets-api",
+					"Port": 8080
+				}
+			],
+			"UpstreamPathTemplate": "/bets/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+		},
+		{
+			"DownstreamPathTemplate": "/customers/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "customers-api",
+					"Port": 8080
+				}
+			],
+			"UpstreamPathTemplate": "/customers/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+		},
+		{
+			"DownstreamPathTemplate": "/funds/{everything}",
+			"DownstreamScheme": "http",
+			"DownstreamHostAndPorts": [
+				{
+					"Host": "funds-api",
+					"Port": 8080
+				}
+			],
+			"UpstreamPathTemplate": "/funds/{everything}",
+			"UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
+		}
+	],
+	"GlobalConfiguration": {
+		"BaseUrl": "http://localhost:8080"
+	}
+}
