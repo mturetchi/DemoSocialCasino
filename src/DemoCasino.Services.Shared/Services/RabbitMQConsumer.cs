@@ -31,8 +31,18 @@ public class RabbitMQConsumer<T> : IRabbitMQConsumer<T>
         {
             var body = ea.Body.ToArray();
             var jsonMessage = Encoding.UTF8.GetString(body);
-            var message = JsonSerializer.Deserialize<T>(jsonMessage);
-            handleMessage(message);
+
+            try
+            {
+                var message = JsonSerializer.Deserialize<T>(jsonMessage);
+                handleMessage(message);
+                channel.BasicAck(ea.DeliveryTag, multiple: false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error processing message: {jsonMessage}");
+                channel.BasicNack(ea.DeliveryTag, multiple: false, requeue: true);
+            }
         };
 
         channel.BasicConsume(queue: queueName, autoAck: false, consumer: consumer);
@@ -48,9 +58,9 @@ public class RabbitMQConsumer<T> : IRabbitMQConsumer<T>
             var body = ea.Body.ToArray();
             var jsonMessage = Encoding.UTF8.GetString(body);
             _logger.LogInformation(jsonMessage);
-            var message = JsonSerializer.Deserialize<T>(jsonMessage);
             try
             {
+                var message = JsonSerializer.Deserialize<T>(jsonMessage);
                 await handleMessage(message);
                 channel.BasicAck(ea.DeliveryTag, multiple: false);
             }
