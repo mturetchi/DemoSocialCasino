@@ -40,7 +40,8 @@ class CheckFundsHandler : ICheckFundsHandler
         var response = new CheckFundsResponse
         {
             UserId = request.UserId,
-            HasSufficientFunds = hasSufficientFunds
+            HasSufficientFunds = hasSufficientFunds,
+            CorrelationId = request.CorrelationId
         };
 
         _logger.LogInformation($"Has Sufficient funds: {hasSufficientFunds}");

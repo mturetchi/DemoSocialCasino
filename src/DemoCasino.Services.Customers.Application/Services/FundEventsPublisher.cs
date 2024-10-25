@@ -23,11 +23,14 @@ class FundEventsPublisher : IFundsEventsPublisher
         }, FundQueues.InitializeFundsQueue);
     }
 
-    public void GetFunds(Guid userId)
+    public Guid GetFunds(Guid userId)
     {
-        _producer.Publish(new GetFundsRequest
+        var request = new GetFundsRequest
         {
             UserId = userId,
-        }, FundQueues.GetFundsQueue);
+            CorrelationId = Guid.NewGuid()
+        };
+        _producer.Publish(request, FundQueues.GetFundsQueue);
+        return request.CorrelationId;
     }
 }

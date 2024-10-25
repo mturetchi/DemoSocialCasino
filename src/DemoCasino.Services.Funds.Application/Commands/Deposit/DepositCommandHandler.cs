@@ -3,42 +3,55 @@ using DemoCasino.Services.Funds.Core.Entities;
 using DemoCasino.Services.Funds.Core.ViewModels;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using RedLockNet;
 
 namespace DemoCasino.Services.Funds.Application.Commands.Deposit;
 
 class DepositCommandHandler : IRequestHandler<DepositCommand, FundViewModel>
 {
     private readonly IFundsDbContext _dbContext;
+    private readonly IDistributedLockFactory _lockFactory;
 
-    public DepositCommandHandler(IFundsDbContext dbContext)
+    public DepositCommandHandler(
+        IFundsDbContext dbContext,
+        IDistributedLockFactory lockFactory
+    )
     {
         _dbContext = dbContext;
+        _lockFactory = lockFactory;
     }
 
     public async Task<FundViewModel> Handle(DepositCommand request, CancellationToken cancellationToken)
     {
-        var fund = await _dbContext
-            .Funds
-            .FirstOrDefaultAsync(f => f.CustomerId == request.CustomerId, cancellationToken);
+        var resource = $"funds:lock:{request.CustomerId}";
 
-        if (fund == null)
+        const int maxAttempts = 10;
+        int attempts = 0;
+
+        while (attempts < maxAttempts)
         {
-            fund = new Fund
+            using var redLock = await _lockFactory.CreateLockAsync(resource, TimeSpan.FromSeconds(60));
+            if (redLock.IsAcquired)
             {
-                CustomerId = request.CustomerId,
-                Amount = 0,
-            };
-            _dbContext.Funds.Add(fund);
+                var fund = await _dbContext
+                    .Funds
+                    .FirstOrDefaultAsync(f => f.CustomerId == request.CustomerId, cancellationToken);
+
+                fund.Amount += request.Amount;
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
+                
+                return new FundViewModel
+                {
+                    CustomerId = fund.CustomerId,
+                    Amount = fund.Amount,
+                };
+            }
+
+            attempts++;
+            await Task.Delay(100); // Delay before the next attempt
         }
 
-        fund.Amount += request.Amount;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
-
-        return new FundViewModel
-        {
-            CustomerId = fund.CustomerId,
-            Amount = fund.Amount,
-        };
+        throw new Exception("Unable to acquire lock after multiple attempts");
     }
 }

@@ -4,5 +4,5 @@ interface IFundsEventsPublisher
 {
     void InitializeFunds(Guid userId, decimal amount);
 
-    void GetFunds(Guid userId);
+    Guid GetFunds(Guid userId);
 }

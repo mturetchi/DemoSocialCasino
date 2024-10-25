@@ -9,8 +9,11 @@
 					"Port": 8080
 				}
 			],
+			"LoadBalancerOptions": {
+				"Type": "RoundRobin"
+			},
 			"UpstreamPathTemplate": "/bets/{everything}",
-			"UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ],
+			"UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
 		},
 		{
 			"DownstreamPathTemplate": "/customers/{everything}",
@@ -21,6 +24,9 @@
 					"Port": 8080
 				}
 			],
+			"LoadBalancerOptions": {
+				"Type": "RoundRobin"
+			},
 			"UpstreamPathTemplate": "/customers/{everything}",
 			"UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
 		},
@@ -33,6 +39,9 @@
 					"Port": 8080
 				}
 			],
+			"LoadBalancerOptions": {
+				"Type": "RoundRobin"
+			},
 			"UpstreamPathTemplate": "/funds/{everything}",
 			"UpstreamHttpMethod": [ "GET", "POST", "PUT", "DELETE" ]
 		}

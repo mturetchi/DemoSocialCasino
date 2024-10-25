@@ -20,17 +20,20 @@ class BetsService : IBetsService
         _logger = logger;
     }
 
-    public void CheckFunds(Guid userId, decimal amount)
+    public Guid CheckFunds(Guid userId, decimal amount)
     {
         _logger.LogInformation($"Check funds: {userId}, {amount}");
 
         var checkFundsRequest = new CheckFundsRequest
         {
             UserId = userId,
-            Amount = amount
+            Amount = amount,
+            CorrelationId = Guid.NewGuid()
         };
 
         _producer.Publish(checkFundsRequest, FundQueues.CheckFundsQueue);
+
+        return checkFundsRequest.CorrelationId;
     }
 
     public void PlaceBet(Guid userId, decimal amount)

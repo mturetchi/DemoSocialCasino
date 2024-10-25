@@ -14,7 +14,7 @@ class CheckFundsResponseHandler : ICheckFundsResponseHandler
 
     public CheckFundsResponseHandler(
         IRabbitMQConsumer<CheckFundsResponse> consumer,
-        ILogger<CheckFundsResponseHandler> logger    
+        ILogger<CheckFundsResponseHandler> logger
     )
     {
         consumer.Consume(FundQueues.CheckFundsResponseQueue, HandleFundsResponse);
@@ -23,19 +23,28 @@ class CheckFundsResponseHandler : ICheckFundsResponseHandler
 
     private void HandleFundsResponse(CheckFundsResponse response)
     {
-        if (_pendingRequests.TryRemove(response.UserId, out var tcs))
+        if (_pendingRequests.TryRemove(response.CorrelationId, out var tcs))
+        {
             tcs.SetResult(response);
+            _logger.LogInformation($"Funds response received for UserId: {response.UserId}, SufficientFunds: {response.HasSufficientFunds}, CorrelationId: {response.CorrelationId}");
+        }
+        else throw new Exception("Correlation not found");
     }
 
-    public Task<CheckFundsResponse> WaitForResponse(Guid userId)
+    public Task<CheckFundsResponse> WaitForResponse(Guid userId, Guid correlationId)
     {
         var tcs = new TaskCompletionSource<CheckFundsResponse>();
-        _pendingRequests[userId] = tcs;
-        return tcs.Task;
+
+        _pendingRequests[correlationId] = tcs;
+
+        return tcs.Task.ContinueWith(task =>
+        {
+            _pendingRequests.TryRemove(correlationId, out _);
+            return task.Result;
+        });
     }
 
     public void Subscribe()
     {
-        _logger.LogInformation("Subscribe...");
     }
 }

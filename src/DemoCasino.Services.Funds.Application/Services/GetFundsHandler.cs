@@ -35,7 +35,12 @@ class GetFundsHandler : IGetFundsHandler
     private async Task HandleGetFundsRequest(GetFundsRequest request)
     {
         var funds = await GetFunds(request.UserId);
-        _producer.Publish(new GetFundsResponse { UserId = funds.CustomerId, Amount = funds.Amount}, FundQueues.GetFundsResponseQueue);
+        _producer.Publish(new GetFundsResponse
+        {
+            UserId = funds.CustomerId,
+            Amount = funds.Amount,
+            CorrelationId = request.CorrelationId
+        }, FundQueues.GetFundsResponseQueue);
     }
 
     private async Task<FundViewModel> GetFunds(Guid userId)

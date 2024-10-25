@@ -8,6 +8,7 @@ services:
       POSTGRES_DB: DemoCasino
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_MAX_CONNECTIONS: 500
     ports:
       - "5432:5432"
     volumes:
@@ -23,9 +24,6 @@ services:
     build:
       context: .
       dockerfile: ./src/DemoCasino.Services.Bets.Api/Dockerfile
-    container_name: bets-api
-    ports:
-      - "8081:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=bets;Username=postgres;Password=mysecretpassword
       - RabbitMQ__HostName=rabbitmq
@@ -41,14 +39,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
 
   customers-api:
     build:
       context: .
       dockerfile: ./src/DemoCasino.Services.Customers.Api/Dockerfile
-    container_name: customers-api
-    ports:
-      - "8082:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=customers;Username=postgres;Password=mysecretpassword
       - RabbitMQ__HostName=rabbitmq
@@ -64,14 +63,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
 
   funds-api:
     build:
       context: .
       dockerfile: ./src/DemoCasino.Services.Funds.Api/Dockerfile
-    container_name: funds-api
-    ports:
-      - "8083:8080"
     environment:
       - ConnectionStrings__DefaultConnection=Host=postgres;Database=funds;Username=postgres;Password=mysecretpassword
       - RabbitMQ__HostName=rabbitmq
@@ -87,12 +87,15 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    deploy:
+      replicas: 3
+      restart_policy:
+        condition: on-failure
 
   api-gateway:
     build:
       context: .
       dockerfile: ./src/DemoCasino.ApiGateway/Dockerfile
-    container_name: api-gateway
     ports:
       - "8080:8080"
     depends_on:

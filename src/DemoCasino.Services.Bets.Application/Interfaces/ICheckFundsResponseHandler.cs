@@ -5,5 +5,5 @@ namespace DemoCasino.Services.Bets.Application.Interfaces;
 
 public interface ICheckFundsResponseHandler : IEventSubscriber
 {
-    Task<CheckFundsResponse> WaitForResponse(Guid userId);
+    Task<CheckFundsResponse> WaitForResponse(Guid userId, Guid correlationId);
 }

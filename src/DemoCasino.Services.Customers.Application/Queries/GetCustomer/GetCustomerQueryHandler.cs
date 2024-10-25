@@ -40,9 +40,9 @@ class GetCustomerQueryHandler : IRequestHandler<GetCustomerQuery, CustomerViewMo
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
 
-        _fundsEventsPublisher.GetFunds(request.Id);
+        var correlationId = _fundsEventsPublisher.GetFunds(request.Id);
 
-        var funds = await _getFundsResponseHandler.WaitForResponse(request.Id);
+        var funds = await _getFundsResponseHandler.WaitForResponse(request.Id, correlationId);
 
         var customerViewModel = new CustomerViewModel
         {

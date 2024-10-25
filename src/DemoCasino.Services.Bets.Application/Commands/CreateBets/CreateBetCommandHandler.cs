@@ -24,9 +24,9 @@ class CreateBetCommandHandler : IRequestHandler<CreateBetCommand, BetViewModel>
 
     public async Task<BetViewModel> Handle(CreateBetCommand request, CancellationToken cancellationToken)
     {
-        _betsService.CheckFunds(request.UserId, request.Amount);
+        var correlationId = _betsService.CheckFunds(request.UserId, request.Amount);
 
-        var fundsResponse = await _fundsResponseHandler.WaitForResponse(request.UserId);
+        var fundsResponse = await _fundsResponseHandler.WaitForResponse(request.UserId, correlationId);
 
         if (!fundsResponse.HasSufficientFunds)
             throw new Exception("Insufficient funds");

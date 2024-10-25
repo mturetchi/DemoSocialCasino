@@ -23,19 +23,28 @@ class GetFundsResponseHandler : IGetFundsResponseHandler
 
     private void HandleGetFundsResponse(GetFundsResponse response)
     {
-        if (_pendingRequests.TryRemove(response.UserId, out var tcs))
+        if (_pendingRequests.TryRemove(response.CorrelationId, out var tcs))
+        {
             tcs.SetResult(response);
+            _logger.LogInformation($"Funds response received for UserId: {response.UserId}, Balance: {response.Amount}, CorrelationId: {response.CorrelationId}");
+        }
+        else throw new Exception("Correlation not found");
     }
 
-    public Task<GetFundsResponse> WaitForResponse(Guid userId)
+    public Task<GetFundsResponse> WaitForResponse(Guid userId, Guid correlationId)
     {
         var tcs = new TaskCompletionSource<GetFundsResponse>();
-        _pendingRequests[userId] = tcs;
-        return tcs.Task;
+
+        _pendingRequests[correlationId] = tcs;
+
+        return tcs.Task.ContinueWith(task =>
+        {
+            _pendingRequests.TryRemove(correlationId, out _);
+            return task.Result;
+        });
     }
 
     public void Subscribe()
     {
-        _logger.LogInformation("Subscribe...");
     }
 }
